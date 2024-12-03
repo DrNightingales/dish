@@ -1,45 +1,45 @@
-# Compiler and flags
-CC = gcc
-CFLAGS_RELEASE = -O2 -Wall -Wextra
-CFLAGS_DEBUG = -g -fsanitize=address,undefined -Wall -Wextra -DDEBUG
-LDFLAGS_DEBUG = -fsanitize=address,undefined
-CFLAGS = $(CFLAGS_RELEASE)
+# Makefile (Top level)
 
-# Directories
-SRC_DIR = .
-BUILD_DIR = build
+include Makefile.common
 
-# Sources and objects
-SRC_FILES = wrappers.c main.c
-OBJ_FILES = $(SRC_FILES:%.c=$(BUILD_DIR)/%.o)
-DEPS = 
-# Target executables
-TARGET_RELEASE = shell_release
-TARGET_DEBUG = shell_debug
+.PHONY: all clean debug release
 
-# Default target: release version
-all: $(TARGET_RELEASE)
+all: debug
 
-# Release target
-$(TARGET_RELEASE): $(OBJ_FILES)
-	$(CC) $(OBJ_FILES) -o $(TARGET_RELEASE) $(CFLAGS)
+debug: CFLAGS += $(DEBUG_FLAGS)
+debug: LDFLAGS += $(DEBUG_FLAGS)  # Add sanitizer flags to LDFLAGS
+debug: $(BIN_DIR)/shell $(BIN_DIR)/cat $(BIN_DIR)/ls
 
-# Debug target
-debug: CFLAGS = $(CFLAGS_DEBUG)
-debug: $(TARGET_DEBUG)
+release: CFLAGS += $(RELEASE_FLAGS)
+release: $(BIN_DIR)/shell $(BIN_DIR)/cat $(BIN_DIR)/ls
 
-$(TARGET_DEBUG): $(OBJ_FILES)
-	$(CC) $(OBJ_FILES) -o $(TARGET_DEBUG) $(CFLAGS) $(LDFLAGS_DEBUG)
+# Shell target
+$(BIN_DIR)/shell: $(OBJ_DIR)/shell/main.o $(OBJ_DIR)/shell/wrappers.o
+	$(MKDIR) $(BIN_DIR)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-# Build objects
-$(BUILD_DIR)/%.o: %.c $(DEPS)
-	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -I. -c $< -o $@
+# Cat target
+$(BIN_DIR)/cat: $(OBJ_DIR)/utils/cat/cat.o
+	$(MKDIR) $(BIN_DIR)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-# Clean target
+# LS target
+$(BIN_DIR)/ls: $(OBJ_DIR)/utils/ls/ls.o
+	$(MKDIR) $(BIN_DIR)
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+# Generic object file rule
+$(OBJ_DIR)/shell/%.o: shell/%.c
+	$(MKDIR) $(OBJ_DIR)/shell
+	$(CC) -c $(CFLAGS) $(INCLUDES) -o $@ $<
+
+$(OBJ_DIR)/utils/cat/%.o: utils/cat/%.c
+	$(MKDIR) $(OBJ_DIR)/utils/cat
+	$(CC) -c $(CFLAGS) $(INCLUDES) -o $@ $<
+
+$(OBJ_DIR)/utils/ls/%.o: utils/ls/%.c
+	$(MKDIR) $(OBJ_DIR)/utils/ls
+	$(CC) -c $(CFLAGS) $(INCLUDES) -o $@ $<
+
 clean:
-	rm -rf $(BUILD_DIR) $(TARGET_RELEASE) $(TARGET_DEBUG)
-
-# Phony targets
-.PHONY: all debug clean
-
+	$(CLEAN)

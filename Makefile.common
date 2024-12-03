@@ -1,0 +1,31 @@
+# Makefile.common
+
+CC = gcc
+CFLAGS = -Wall -Wextra -Werror
+LDFLAGS =
+
+# Debug mode flags
+DEBUG_FLAGS = -g -fsanitize=address,undefined -DDEBUG
+
+# Release mode flags
+RELEASE_FLAGS = -O3 -pedantic
+
+# Directories
+OBJ_DIR = obj
+BIN_DIR = bin
+
+# File extensions for objects
+OBJ_EXT = .o
+
+# Utilities for cleaning
+RM = rm -rf
+MKDIR = mkdir -p
+
+# Common source directories
+SRC_DIRS = shell utils/cat utils/ls
+
+# Clean targets
+CLEAN = $(RM) $(OBJ_DIR) $(BIN_DIR)
+
+# Include paths
+INCLUDES = -I./shell -I./utils/cat -I./utils/ls
