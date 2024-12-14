@@ -3,12 +3,15 @@ int
 main()
 {
     char *input = NULL;
-    char *token, *saveptr;
-    pid_t *pids = (pid_t *) malloc(CMDS_BASE_COUNT * sizeof(pid_t));
-    size_t ncmds = 0;
-    size_t cmds_capacity = CMDS_BASE_COUNT;
+    char *token = NULL;
+    char *saveptr = NULL;
+    size_t n_cmds = 0;
     size_t n_read_bytes = 0;
+    size_t cmds_capacity = CMDS_BASE_COUNT;
     BOOL exit_cmd = FALSE;
+
+    pid_t *pids = (pid_t *) malloc(CMDS_BASE_COUNT * sizeof(pid_t));
+
     while (!exit_cmd) {
         printf("$> ");
         if (getline_w(&input, &n_read_bytes, stdin) == -1) {
@@ -37,31 +40,34 @@ main()
             // TODO: Add error check
             pid_t current = process_token(token_stripped);
             if (current != -1) {
-                if (ncmds + 1 == cmds_capacity) {
+                if (n_cmds + 1 == cmds_capacity) {
                     cmds_capacity *= 2;
                     pids = (pid_t *) realloc(pids, cmds_capacity * sizeof(pid_t));
                     if (!pids) {
-                        colored_perror("critical: relloc");
+                        colored_perror("critical: realloc");
+                        free(token_stripped);
                         exit(EXIT_FAILURE);
                     } else {
-                        pids[ncmds++] = current;
+                        pids[n_cmds++] = current;
                     }
                 } else {
                 }
             }
 
             free(token_stripped);
+            token_stripped = NULL;
             token = strtok_r(NULL, "|", &saveptr);
         }
-        for (size_t k = 0; k < ncmds; ++k) {
+        for (size_t k = 0; k < n_cmds; ++k) {
             int status;
             if (waitpid(pids[k], &status, WUNTRACED) == -1) {
                 colored_perror("waitpid");
             }
             pids[k] = 0;
         }
-        ncmds = 0;
+        n_cmds = 0;
     }
+
     free(pids);
     free(input);
 }

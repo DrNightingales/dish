@@ -4,17 +4,17 @@ include Makefile.common
 
 .PHONY: all clean debug release
 
-all: debug
+all: release
 
 debug: CFLAGS += $(DEBUG_FLAGS)
 debug: LDFLAGS += $(DEBUG_FLAGS)  # Add sanitizer flags to LDFLAGS
-debug: $(BIN_DIR)/shell $(BIN_DIR)/cat $(BIN_DIR)/ls
+debug: drn_shell $(BIN_DIR)/cat $(BIN_DIR)/ls
 
 release: CFLAGS += $(RELEASE_FLAGS)
-release: $(BIN_DIR)/shell $(BIN_DIR)/cat $(BIN_DIR)/ls
+release: drn_shell $(BIN_DIR)/cat $(BIN_DIR)/ls
 
 # Shell target
-$(BIN_DIR)/shell: $(OBJ_DIR)/shell/main.o $(OBJ_DIR)/shell/wrappers.o
+drn_shell: $(OBJ_DIR)/shell/main.o $(OBJ_DIR)/shell/wrappers.o
 	$(MKDIR) $(BIN_DIR)
 	$(CC) -o $@ $^ $(LDFLAGS)
 

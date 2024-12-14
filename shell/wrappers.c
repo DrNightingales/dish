@@ -4,34 +4,36 @@ ssize_t
 getline_w(char **restrict lineptr, size_t *restrict n, FILE *restrict stream)
 {
     BOOL should_free = FALSE;
-    ssize_t nread;
+    ssize_t n_read = 0;
+
     if (lineptr == NULL) {
         should_free = TRUE;
     }
-    if ((nread = getline(lineptr, n, stream)) == -1) {
+    if ((n_read = getline(lineptr, n, stream)) == -1) {
         if (errno != 0) {
             colored_perror("getline");
         }
         if (should_free) {
             free(lineptr);
         }
-        return nread;
+        return n_read;
     }
-    return nread;
+    return n_read;
 }
 
 pid_t
 process_token(char *token)
 {
+    size_t argc = 0;
+    char *subtoken = NULL;
+    char *saveptr = NULL;
+
     char **args = (char **) malloc(ARGS_BASE_COUNT * sizeof(char **));
     if (!args) {
         colored_perror("malloc");
     }
     memset(args, '\0', ARGS_BASE_COUNT * sizeof(char **));
 
-    size_t argc = 0;
-    char *subtoken = NULL;
-    char *saveptr = NULL;
     subtoken = strtok_r(token, " ", &saveptr);
     while (subtoken) {
         args[argc++] = subtoken;
@@ -63,36 +65,40 @@ find_binary(const char *bin_name)
     */
 
     // This function checks local binaries first, since it the the priority of the task
-    const char prefix[] = "./";
-    size_t len = sizeof(prefix) + strlen(bin_name);
-    char *res = (char *) malloc(len);
+    size_t len = 0;
+    char *res = NULL;
+    const char *prefixes[] = {"/", "./", "./bin/", "/usr/bin/", "/bin/"};
 
-    if (!res) {
-        colored_perror("malloc");
-        return NULL;
-    }
-    snprintf(res, len, "%s%s", prefix, bin_name);
-
-    if (access(res, F_OK) != -1) {
-        return res;
-
-    } else {
-        free(res);
-        len = strlen(bin_name) + 1;
+    for (size_t i = 0; i < sizeof(prefixes) / sizeof(char *); ++i) {
+        size_t len = sizeof(prefixes[i]) + strlen(bin_name);
         char *res = (char *) malloc(len);
+
         if (!res) {
             colored_perror("malloc");
             return NULL;
         }
-        snprintf(res, len, "%s", bin_name);
-        return res;
+        snprintf(res, len, "%s%s", prefixes[i], bin_name);
+
+        if (access(res, F_OK) != -1) {
+            return res;
+        }
+        free(res);
     }
+
+    res = strdup(bin_name);
+    len = strlen(res) + 1;
+    if (!res) {
+        colored_perror("malloc");
+        return NULL;
+    }
+    snprintf(res, len, "%s", bin_name);
+    return res;
 }
 
 int
 spawn(const char *file, char *const argv[])
 {
-    pid_t pid;
+    pid_t pid = 0;
 #ifdef DEBUG
     printf(DEBUG_MSG "\nSpawning: %s with args:\n" CLR_RESET, file);
     int i = 1;
@@ -102,6 +108,7 @@ spawn(const char *file, char *const argv[])
     }
     printf("\n");
 #endif
+
     switch (pid = fork()) {
     case -1:
         colored_perror("fork");
@@ -127,7 +134,7 @@ char *
 strip(const char *str)
 {
     if (str == NULL) {
-        return NULL; // Handle NULL input
+        return NULL;
     }
 
     const char *start = str;

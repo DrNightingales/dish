@@ -25,7 +25,7 @@ MKDIR = mkdir -p
 SRC_DIRS = shell utils/cat utils/ls
 
 # Clean targets
-CLEAN = $(RM) $(OBJ_DIR) $(BIN_DIR)
+CLEAN = $(RM) $(OBJ_DIR) $(BIN_DIR) drn_shell
 
 # Include paths
 INCLUDES = -I./shell -I./utils/cat -I./utils/ls
