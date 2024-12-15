@@ -19,7 +19,10 @@ typedef enum BOOL
 } BOOL;
 enum CONSTANTS
 {
+    READ = 0,
+    WRITE = 1,
     MAX_BUFF = 4096,
     ARGS_BASE_COUNT = 128,
-    CMDS_BASE_COUNT = 128
+    CMDS_BASE_COUNT = 128,
+    STD_MODE = 0644
 };
