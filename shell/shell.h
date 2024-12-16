@@ -10,8 +10,8 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <ctype.h>
+#include <signal.h>
 #include "colors.h"
-
 typedef enum BOOL
 {
     FALSE,

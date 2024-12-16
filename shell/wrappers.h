@@ -7,3 +7,5 @@ pid_t process_token(char *token, int redirect_input, int redirect_output);
 char *find_binary(const char *bin_name);
 void colored_perror(const char *msg);
 char *strip(const char *str);
+BOOL char_int_str(int c, char *str);
+void sigchld_handler(int signo);

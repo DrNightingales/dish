@@ -31,7 +31,6 @@ process_token(char *token, int redirect_input, int redirect_output)
     char *file_out = NULL;
     BOOL append = FALSE;
     int pipe_fd[] = {redirect_input, redirect_output};
-
     char **args = (char **) calloc(ARGS_BASE_COUNT, sizeof(char **));
     if (!args) {
         colored_perror("malloc");
@@ -53,6 +52,8 @@ process_token(char *token, int redirect_input, int redirect_output)
             // Input redirection
             subtoken = strtok_r(NULL, " ", &saveptr);
             file_in = subtoken;
+        } else if (strcmp(subtoken, "&") == 0) {
+            // do nothing
         } else {
             if (argc == args_capacity - 2) {
                 args = (char **) realloc(args, 2 * args_capacity * sizeof(char *));
@@ -153,6 +154,14 @@ spawn(const char *file, char *const argv[], char *file_in, char *file_out, BOOL 
         colored_perror("fork");
         return -1;
     case 0:
+        // Child
+
+        // Set new process group
+        if (setpgid(0, 0) == -1) {
+            perror("setpgid");
+            exit(EXIT_FAILURE);
+        }
+
         // Input redirection to a file
         if (file_in) {
             int fd_in = open(file_in, O_RDONLY);
@@ -203,6 +212,10 @@ colored_perror(const char *msg)
     fprintf(stderr, CLR_RESET CLR_RED "%s: %s\n" CLR_RESET, msg, strerror(errno));
 }
 
+/*
+Accepts a pointer to a string and returns the string with space-like characters removed from both sides
+the function allocates memory, should be freed by caller
+*/
 char *
 strip(const char *str)
 {
@@ -233,4 +246,27 @@ strip(const char *str)
     strncpy(stripped, start, length);
     stripped[length] = '\0';
     return stripped;
+}
+
+/*
+Returns TRUE if character c is found in string str, FALSE otherwise
+Note: str should be a pointer to a NULL-terminated string
+*/
+BOOL
+char_int_str(int c, char *str)
+{
+    for (size_t i = 0; i < strlen(str); ++i) {
+        if (str[i] == c) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+void
+sigchld_handler([[maybe_unused]] int signo)
+{
+    // Reap all terminated child processes
+    while (waitpid(-1, NULL, WNOHANG) > 0)
+        ;
 }

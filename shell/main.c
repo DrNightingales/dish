@@ -26,6 +26,14 @@ main()
             abort();
         }
     }
+    struct sigaction sa;
+    sa.sa_handler = sigchld_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+        colored_perror("sigaction");
+        exit(EXIT_FAILURE);
+    }
 
     while (!exit_cmd) {
         printf("$> ");
@@ -68,6 +76,7 @@ main()
 
         for (size_t cmd_k = 0; cmd_k < n_cmds; ++cmd_k) {
             char *token_stripped = commands[cmd_k];
+            BOOL background = char_int_str('&', token_stripped);
 
             if (strcmp(token_stripped, "exit") == 0) {
                 free(token_stripped);
@@ -93,7 +102,11 @@ main()
                 redirect_output = pipes[cmd_k][WRITE];
             }
             pid_t current = process_token(token_stripped, redirect_input, redirect_output);
-            pids[cmd_k] = current;
+            if (!background) {
+                pids[cmd_k] = current;
+            } else {
+                pids[cmd_k] = 0;
+            }
 
             if (cmd_k > 0) {
                 close(pipes[cmd_k][READ]);
